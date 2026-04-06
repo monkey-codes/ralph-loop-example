@@ -28,6 +28,26 @@ class TodoStore:
     def list(self) -> list[TodoItem]:
         return list(self._items.values())
 
+    def complete(self, id: int) -> TodoItem:
+        item = self._get(id)
+        item.completed = True
+        return item
+
+    def update(self, id: int, description: str) -> TodoItem:
+        item = self._get(id)
+        item.description = description
+        return item
+
+    def delete(self, id: int) -> None:
+        self._get(id)
+        del self._items[id]
+
+    def _get(self, id: int) -> TodoItem:
+        try:
+            return self._items[id]
+        except KeyError:
+            raise TodoNotFoundError(f"TODO #{id} not found") from None
+
 
 def main():
     store = TodoStore()
@@ -64,6 +84,40 @@ def main():
                 for item in items:
                     status = "[x]" if item.completed else "[ ]"
                     print(f"  {item.id}. {status} {item.description}")
+        elif command == "done":
+            if not arg:
+                print("Usage: done <id>")
+                continue
+            try:
+                item = store.complete(int(arg))
+                print(f"Completed TODO #{item.id}: {item.description}")
+            except ValueError:
+                print("Usage: done <id>")
+            except TodoNotFoundError as e:
+                print(e)
+        elif command == "edit":
+            edit_parts = arg.split(maxsplit=1)
+            if len(edit_parts) < 2:
+                print("Usage: edit <id> <new description>")
+                continue
+            try:
+                item = store.update(int(edit_parts[0]), edit_parts[1])
+                print(f"Updated TODO #{item.id}: {item.description}")
+            except ValueError:
+                print("Usage: edit <id> <new description>")
+            except TodoNotFoundError as e:
+                print(e)
+        elif command == "delete":
+            if not arg:
+                print("Usage: delete <id>")
+                continue
+            try:
+                store.delete(int(arg))
+                print(f"Deleted TODO #{arg}")
+            except ValueError:
+                print("Usage: delete <id>")
+            except TodoNotFoundError as e:
+                print(e)
         else:
             print(f"Unknown command: {command}")
 
